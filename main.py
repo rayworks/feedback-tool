@@ -2,21 +2,11 @@
 import sys
 
 from docx import Document
-from docx.enum.text import WD_PARAGRAPH_ALIGNMENT
+from docx.oxml.ns import qn
 from docx.shared import Pt
 
 
-def set_font(cell, bold=True, center_aligned=True, font_name='FangSong', font_size=12):
-    for paragraph in cell.paragraphs:
-        if center_aligned:
-            paragraph.alignment = WD_PARAGRAPH_ALIGNMENT.CENTER
-        for run in paragraph.runs:
-            run.font.name = font_name
-            run.font.size = Pt(font_size)
-            run.font.bold = bold
-
-
-def generate_docx(template_file_name, person_info, paragraphs):
+def generate_docx(template_file_name, person_info, paragraphs, font_name="FangSong"):
     (student, course, time) = person_info
 
     outfile = (student.replace('\n', '') + '-'
@@ -25,25 +15,27 @@ def generate_docx(template_file_name, person_info, paragraphs):
     print("outfile name: " + outfile)
 
     docx = Document(template_file_name)
+
+    # reset the default font in the theme
+    style = docx.styles['Normal']
+    font = style.font
+    font.name = font_name
+    font.size = Pt(12)
+    style._element.rPr.rFonts.set(qn('w:eastAsia'), font_name)
     docx.save(outfile)
+
     docx = Document(outfile)
 
     table = docx.tables[0]
 
     table.cell(0, 1).text = "学生：" + student
-    set_font(table.cell(0, 1))
-
     table.cell(0, 2).text = "科目：" + course
-    set_font(table.cell(0, 2))
-
     table.cell(1, 0).text = "时间：" + time
-    set_font(table.cell(1, 0), bold=False, center_aligned=False)
 
     # remove the old content
     table.cell(2, 0).paragraphs.clear()
     for paragraph in paragraphs:
         table.cell(2, 0).add_paragraph(paragraph)
-    set_font(table.cell(2, 0), bold=False, center_aligned=False, font_size=11)
 
     docx.save(outfile)
     print("updated")
