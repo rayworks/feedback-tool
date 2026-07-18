@@ -37,6 +37,12 @@ def generate_docx(template_file_name, person_info, paragraphs, font_name="FangSo
     for paragraph in paragraphs:
         table.cell(2, 0).add_paragraph(paragraph)
 
+    # the template fixes the content row height (hRule="exact"), which clips
+    # overflowing text; relax it so the row grows and continues onto the next page
+    tr_height = table.rows[2]._tr.trPr.find(qn('w:trHeight'))
+    if tr_height is not None:
+        tr_height.set(qn('w:hRule'), 'atLeast')
+
     docx.save(outfile)
     print("updated")
 
